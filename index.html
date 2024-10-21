@@ -11,49 +11,82 @@
             padding: 0;
             height: 100%;
             display: flex;
+            justify-content: center;
             font-family: Arial, sans-serif;
             font-size: 9px;
             overflow: auto;
         }
 
         #lifeTable {
-            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 67%; /* Max width 67% */
             padding: 10px;
+            box-sizing: border-box;
         }
 
         .row {
             display: flex;
+            width: 100%; /* Ensure rows are full width */
         }
 
         .box {
-            width: calc(60% / 52); /* Adjusted as per your tweak */
-            height: calc((100vh - 20px) / 80 - 2px); /* 80 should be equal to expected age aka row count */
+            width: calc(100% / 52); /* 52 weeks per row */
+            height: calc((100vh - 20px) / 80 - 2px); /* Adjust height to show 80 rows */
             box-sizing: border-box;
             border: 1px solid black;
             margin: 1px;
             text-align: center;
-            overflow: hidden;
+            position: relative;
+            background-color: #F0F0F0; /* Default light background for empty boxes */
         }
-
-        .year-label, .milestone {
-            min-width: fit-content; /* Using min-width as instructed */
-            border: none; /* No borders */
-        }
-		
-		.milestone {		
-			margin-left: 5px;			
-		}
 
         .filled {
-            background-color: green;
+            /* This will be dynamically updated with a gradient color */
         }
 
-        .achieved {
-            color: gray;
-        }
-
-        .pending {
+        /* Tooltip styling */
+        .tooltip {
+            visibility: hidden;
+            width: 280px;
+            background-color: white;
             color: black;
+            text-align: left;
+            padding: 20px;
+            border-radius: 5px;
+            position: absolute;
+            top: -100%;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+            font-size: 12px;
+        }
+
+        .tooltip-title {
+            font-weight: bold;
+            font-size: 18px;
+			line-height: 2em;
+        }
+
+        .tooltip-subtitle {	
+            color: #999;
+            font-size: 14px;
+			line-height: 1.5em;
+        }
+
+        .tooltip-milestone {
+			padding: 2em 0 1em 0;
+            font-style: italic;
+			color: navy;
+            font-family: serif;
+            font-size: 18px;
+			line-height: 1.2em;
+        }
+
+        .box:hover .tooltip {
+            visibility: visible;
         }
 
     </style>
@@ -61,190 +94,195 @@
 
 <body>
 
-    <div id="lifeTable">
-        <!-- Rows with year labels, weeks, and milestones will be added here via JavaScript -->
-    </div>
+    <div id="lifeTable"></div>
 
     <script>
-        const BOXES_PER_ROW = 52;
-        const TOTAL_ROWS = 80;  
+        const BOXES_PER_ROW = 52; // 52 weeks in a year
+        const TOTAL_ROWS = 80; // Expected lifespan (80 years)
         const BIRTHDATE = new Date('1981-01-04');
-		
-		const milestones = {
-			1: "Begin to smile, coo, hold head up",
-			2: "Start teething, crawling",
-			3: "Walking, first words",
-			4: "Running, potty training",
-			5: "Improved speech, imaginative play",
-			6: "Reading simple words, bike riding",
-			7: "Understanding time, drawing skills",
-			8: "Develop friendships, start team sports",
-			9: "Increased muscle coordination, growth in cognitive skills",
-			10: "Tie shoelaces, improved problem-solving skills",
-			11: "Onset of puberty for some, growth spurts",
-			12: "Voice deepening, facial hair development",
-			13: "Increased appetite, peer pressure sensitivity",
-			14: "Increased physical strength, cognitive growth",
-			15: "Growth spurt peaks, cognitive maturation",
-			16: "Fine-tuning of motor skills, development of identity",
-			17: "Possible increased risk for hypertension if unhealthy lifestyle starts",
-			18: "Brain development continues, independence growth",
-			19: "Peak physical health if maintained with exercise and diet",
-			20: "Increased risk for diabetes if unhealthy lifestyle persists",
-			21: "Brain fully matures, muscle and bone peak strength",
-			22: "Maintaining physical activity becomes crucial",
-			23: "Potential for high stress and its implications",
-			24: "Increased risk for gout if diet is rich in purines",
-			25: "Metabolic rate slows down, easier weight gain",
-			26: "Potential for alcohol-related hypertension",
-			27: "Importance of regular health checks",
-			28: "Skin shows signs of aging, lesser elasticity",
-			29: "Risk for diabetes increases with weight gain and sedentary lifestyle",
-			30: "Bone mass starts declining slowly",
-			31: "Increased risk of hypertension if unchecked",
-			32: "Potential early signs of hereditary health issues",
-			33: "Risk of gout flares if untreated or with certain triggers",
-			34: "Importance of prostate health awareness",
-			35: "Potential decrease in metabolic rate, muscle mass retention",
-			36: "Risk of developing diabetes complications if undiagnosed",
-			37: "Potential increased risk of strokes if other health factors persist",
-			38: "Significance of mental health and managing stress",
-			39: "Possible decrease in hair density, skin elasticity",
-			40: "Routine prostate checks recommended, andropause begins",
-			41: "Regular blood pressure monitoring needed",
-			42: "Potential increase in weight, importance of maintaining active lifestyle",
-			43: "Monitoring of sugar levels becomes critical if at risk",
-			44: "Increased emphasis on a balanced diet, less red meat",
-			45: "Routine checks for cholesterol, diabetes, blood pressure",
-			46: "Awareness about early detection of lymphoma cancer",
-			47: "Maintaining muscle mass and bone density becomes crucial",
-			48: "Importance of cancer screenings due to genetic history",
-			49: "Regular prostate exams, PSA tests recommended",
-			50: "Higher risk of hypertension, regular medication may be required",
-			51: "Emphasis on heart health, avoiding smoking and excess alcohol",
-			52: "Potential increased risk of strokes, importance of medication and lifestyle",
-			53: "Routine checks for eye health, potential for presbyopia",
-			54: "Importance of maintaining a diet low in salt and processed foods",
-			55: "Higher risk for gout attacks, emphasis on medication and diet",
-			56: "Regular screenings for lymphoma symptoms",
-			57: "Awareness of mental health, potential for depression or anxiety",
-			58: "Increased emphasis on joint health, potential for arthritis",
-			59: "Regular checks for prostate health, awareness of symptoms",
-			60: "Increased risk for diabetes complications",
-			61: "Routine checks for skin health, potential for age spots, moles",
-			62: "Higher risk of hypertension-related issues",
-			63: "Monitoring for signs of memory decline or cognitive issues",
-			64: "Increased risk for strokes, especially if combined with other conditions",
-			65: "Emphasis on balance exercises, potential for falls",
-			66: "Awareness and regular checks for lymphoma",
-			67: "Potential decline in muscle mass, importance of strength training",
-			68: "Routine screenings for prostate cancer",
-			69: "Higher risk of bone fractures, importance of calcium and Vitamin D",
-			70: "Potential increased risk for chronic conditions",
-			71: "Emphasis on maintaining mental health and cognitive functions",
-			72: "Regular checks for cardiovascular health",
-			73: "Awareness of signs and symptoms of strokes",
-			74: "Maintaining a balanced diet, potential digestive issues",
-			75: "Increased emphasis on overall health checks, potential mobility issues",
-			76: "Emphasis on regular heart check-ups due to increased risks",
-			77: "Potential need for aids like hearing aids, eyeglasses with higher prescriptions",
-			78: "Risk of developing more severe diabetes complications if not managed",
-			79: "Importance of strength training to counteract muscle atrophy",
-			80: "Awareness of potential onset of dementia or Alzheimer's",
-			81: "Continued checks for prostate health, considering genetic predisposition",
-			82: "Regular monitoring for signs of lymphoma or other cancers",
-			83: "Potential decrease in lung capacity, importance of breathing exercises",
-			84: "Increased importance of joint health, potential for osteoarthritis",
-			85: "Emphasis on maintaining good nutrition, potential for malnutrition",
-			86: "Increased susceptibility to infections, importance of vaccinations",
-			87: "Regular checks for cardiovascular health, increased risk of heart diseases",
-			88: "Potential mobility issues, exploring aids like walkers or wheelchairs",
-			89: "Awareness of potential kidney and liver function declines",
-			90: "Increased emphasis on holistic health, mental well-being, and regular medical check-ups"
 
-		};
+        // Milestones
+        const milestones = {
+    1: "Begin to smile, coo, and hold head up.",
+    2: "Likely start teething and crawling.",
+    3: "Start walking and saying first words.",
+    4: "Running, potty training; start showing early signs of coordination.",
+    5: "Imaginative play, improved speech.",
+    6: "Begin reading simple words, bike riding.",
+    7: "Develop friendships and understanding of time; increasing cognitive ability.",
+    8: "Participate in team sports, further development of friendships.",
+    9: "Improved muscle coordination and cognitive skills growth.",
+    10: "Likely show improved problem-solving skills and physical independence.",
+    11: "Start early signs of puberty and some initial growth spurts.",
+    12: "Deepening voice and early signs of puberty, particularly for boys.",
+    13: "Increasing sensitivity to peer pressure, appetite surges.",
+    14: "Physical strength continues to increase along with cognitive development.",
+    15: "Likely experiencing peak growth spurt and some cognitive maturation.",
+    16: "Development of fine motor skills, identity, and independence.",
+    17: "Possible risk for unhealthy habits leading to hypertension if a sedentary lifestyle is followed.",
+    18: "Brain continues developing, independence and decision-making grow.",
+    19: "Peak physical health if fitness and nutrition are maintained, continuing to develop endurance and strength.",
+    20: "Increased risk of developing metabolic syndrome if not careful with diet.",
+    21: "Likely experience full brain maturation; peak strength in muscles and bones.",
+    22: "Important to maintain an active lifestyle to prevent early metabolic and cardiovascular issues.",
+    23: "Stress levels may rise; focus on managing stress to avoid long-term impacts on health.",
+    24: "Increased risk of gout if a diet high in purines is followed.",
+    25: "Metabolism slows down, leading to easier weight gain if diet and exercise are not prioritized.",
+    26: "Potential for alcohol-related hypertension if alcohol consumption is high.",
+    27: "Regular health checks are becoming increasingly important to catch early signs of disease.",
+    28: "Possible signs of aging begin, such as reduced skin elasticity.",
+    29: "Risk of diabetes and other lifestyle-related diseases rises if weight gain continues and physical activity is low.",
+    30: "Bone mass starts to slowly decline; staying physically active becomes critical to maintain health.",
+    31: "Hypertension risk increases if lifestyle and diet are not well managed.",
+    32: "Early signs of hereditary health issues (e.g., Alzheimer’s) may emerge; monitoring is recommended.",
+    33: "If untreated, risk of gout or joint-related pain could increase.",
+    34: "Prostate health awareness becomes important as part of regular health checks.",
+    35: "Further slowing of metabolism; maintaining muscle mass becomes crucial.",
+    36: "Risk of complications from undiagnosed diabetes or hypertension increases.",
+    37: "Risk of strokes increases if risk factors like hypertension or diabetes are not managed.",
+    38: "Mental health and stress management become a more significant focus to prevent burnout.",
+    39: "Decrease in hair density and skin elasticity likely; appearance of physical signs of aging.",
+    40: "Andropause may begin, prostate health becomes a priority, routine prostate exams are recommended.",
+    41: "Likely to need reading glasses due to presbyopia; blood pressure monitoring becomes routine.",
+    42: "Weight gain may become more prominent; focus on maintaining an active lifestyle.",
+    43: "More frequent monitoring of blood sugar and cholesterol is necessary, especially if metabolic syndrome is present.",
+    44: "Emphasis on eating a balanced diet with less red meat, more vegetables, and whole grains.",
+    45: "Likely to start using hypertrophic eyeglasses; cholesterol and blood pressure checks become routine.",
+    46: "Increased awareness about early detection of cancers (especially prostate or lymphoma).",
+    47: "Muscle mass and bone density decline; regular exercise (strength and endurance) is crucial.",
+    48: "Likely to begin regular cancer screenings if there's a genetic predisposition; fitness remains a priority.",
+    49: "Prostate health and PSA tests become more routine; cognitive function should be monitored for early signs of decline.",
+    50: "Higher risk of hypertension and diabetes; medications may become necessary to manage blood pressure.",
+    51: "Heart health monitoring becomes critical, and lifestyle adjustments may be required to prevent heart disease.",
+    52: "Increased risk of stroke, regular medication, and stress management become critical.",
+    53: "Likely onset of presbyopia, making reading glasses necessary; regular eye exams recommended.",
+    54: "Dietary adjustments (reducing salt and processed foods) are important to maintain cardiovascular health.",
+    55: "Higher likelihood of gout attacks if unmanaged, focusing on diet and medication is essential.",
+    56: "Continued cancer screenings (e.g., lymphoma) and monitoring for prostate issues.",
+    57: "Mental health may become a concern; depression or anxiety should be monitored and managed.",
+    58: "Increased emphasis on joint health and possible onset of arthritis symptoms.",
+    59: "Regular prostate and neurological health checks to monitor for cognitive decline.",
+    60: "Likely increase in risk for diabetes complications and joint health issues.",
+    61: "Routine skin health checks (age spots, moles) recommended, along with regular cognitive function assessments.",
+    62: "Increased risk of hypertension-related issues; lifestyle adjustments and regular medication become important.",
+    63: "Memory and cognitive function decline should be closely monitored.",
+    64: "Stroke risk increases, especially if combined with other health conditions; maintaining cardiovascular health is key.",
+    65: "Balance exercises to prevent falls; osteoporosis or arthritis may become more evident.",
+    66: "Likely continued risk for cancers such as prostate or lymphoma; regular screenings recommended.",
+    67: "Muscle mass declines further, making strength training essential to prevent frailty.",
+    68: "Prostate cancer screenings continue; potential need for joint replacement due to osteoarthritis.",
+    69: "Higher risk of fractures due to bone density loss; calcium and vitamin D intake should be prioritized.",
+    70: "Likely onset of chronic conditions (diabetes, hypertension) that require consistent management.",
+    71: "Mental health focus; maintaining cognitive functions through brain exercises and social engagement.",
+    72: "Cardiovascular health checks become routine, including potential pacemaker use.",
+    73: "Awareness of stroke symptoms and joint issues; mobility aids may become necessary.",
+    74: "Digestive issues may arise; focus on maintaining a balanced diet.",
+    75: "Potential mobility issues; emphasis on joint health and muscle maintenance.",
+    76: "Heart health check-ups become essential to manage increased risks.",
+    77: "Likely need for aids like hearing aids or stronger eyeglasses; joint and muscle care remains important.",
+    78: "Risk of severe diabetes complications if the condition is not well managed.",
+    79: "Strength training to prevent muscle atrophy and frailty becomes a key focus.",
+    80: "Potential onset of dementia or Alzheimer’s; neurological health monitoring is crucial.",
+    81: "Routine checks for prostate and cognitive health; early detection of cancers continues.",
+    82: "Likely monitoring for signs of lymphoma or other cancers.",
+    83: "Possible decrease in lung capacity; breathing exercises may help maintain respiratory health.",
+    84: "Joint health vigilance, osteoarthritis symptoms management, cognitive exercises.",
+    85: "Increased emphasis on balanced nutrition and muscle strength.",
+    86: "Increased susceptibility to infections, importance of vaccinations and cognitive care.",
+    87: "Routine cardiovascular and cognitive health screenings, increased fall risk.",
+    88: "Potential mobility issues, joint and muscle maintenance, neurological health checks.",
+    89: "Increased awareness of kidney and liver function decline, routine checks necessary.",
+    90: "Heightened focus on overall health with emphasis on cognitive and physical well-being."
+}
 
-		function getAgeAndTimeLeft(dateOfBirth, lifeExpectancy = TOTAL_ROWS) {
-			const currentDate = new Date();
 
-			// Calculate age
-			const ageDiffMs = currentDate - dateOfBirth;
-			const ageDiffDate = new Date(ageDiffMs);
-
-			let ageYears = Math.abs(ageDiffDate.getUTCFullYear() - 1970);
-			let ageMonths = ageDiffDate.getUTCMonth();
-			let ageDays = ageDiffDate.getUTCDate() - 1; // subtracting 1 because it starts from 1
-
-			// Calculate time left
-			let yearsLeft = lifeExpectancy - ageYears;
-			let monthsLeft = 12 - ageMonths - 1; // subtract 1 to account for the current month
-			let daysLeft = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate() - currentDate.getDate();
-
-			if (daysLeft < 0) {
-				daysLeft += new Date(currentDate.getFullYear(), currentDate.getMonth(), 0).getDate();
-				monthsLeft -= 1;
-			}
-
-			if (monthsLeft < 0) {
-				monthsLeft += 12;
-				yearsLeft -= 1;
-			}
-
-			// Return formatted strings
-			return {
-				ageString: `${ageYears}y ${ageMonths}m ${ageDays}d old`,
-				timeLeftString: `${yearsLeft}y ${monthsLeft}m ${daysLeft}d left!`
-			};
-		}
-
-		const { ageString, timeLeftString } = getAgeAndTimeLeft(BIRTHDATE);
-		document.title = `${timeLeftString} (${ageString})`;
-		
-		
-        function weeksBetweenDates(startDate, endDate) {
-            const oneWeek = 7 * 24 * 60 * 60 * 1000;
-            const diff = endDate - startDate;
-            return Math.floor(diff / oneWeek);
+        // Helper function to calculate color gradient between two colors based on a percentage
+        function interpolateColor(color1, color2, factor) {
+            const result = color1.slice();
+            for (let i = 0; i < 3; i++) {
+                result[i] = Math.round(result[i] + factor * (color2[i] - color1[i]));
+            }
+            return `rgb(${result.join(",")})`;
         }
 
+        // Function to convert hex color to RGB
+        function hexToRgb(hex) {
+            const bigint = parseInt(hex.slice(1), 16);
+            return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
+        }
+
+        // Define colors for interpolation
+        const lightGreen = hexToRgb("#CCFFCC");  // Starting color (light green)
+        const gray = hexToRgb("#AAAAAA"); // Ending color (gray)
+
+        // Calculate the number of full weeks lived since the last birthday
+        function weeksBetweenDates(startDate, endDate) {
+            const oneWeek = 7 * 24 * 60 * 60 * 1000;
+            return Math.floor((endDate - startDate) / oneWeek);
+        }
+
+        // Function to get the date for a specific week in life
+        function getDateForBox(birthdate, weekNumber) {
+            const startingDate = new Date(birthdate.getTime());
+            startingDate.setDate(birthdate.getDate() + (weekNumber * 7));
+            return startingDate;
+        }
+
+        // Function to format date as '5 May 1985'
+        function formatDate(date) {
+            return date.toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        // Function to fill the boxes with appropriate gradient colors for each row
         function fillBoxes() {
             const currentDate = new Date();
             const totalWeeksLived = weeksBetweenDates(BIRTHDATE, currentDate);
-            const totalYearsLived = Math.floor(totalWeeksLived / 52);
 
             for (let i = 0; i < TOTAL_ROWS; i++) {
                 const row = document.createElement('div');
-                row.classList.add('row');
+                row.classList.add('row'); // Create a new row for each year
 
-                // Add the year label box at the beginning of each row
-                const yearLabelBox = document.createElement('div');
-                yearLabelBox.classList.add('box', 'year-label');
-                yearLabelBox.textContent = (BIRTHDATE.getFullYear() + i).toString();
-                row.appendChild(yearLabelBox);
+                // Calculate gradient factor for the row
+                const factor = i / TOTAL_ROWS;
+                const rowColor = interpolateColor(lightGreen, gray, factor); // Smooth color gradient for the row
 
+                // Add the weekly boxes for each year
                 for (let j = 0; j < BOXES_PER_ROW; j++) {
                     const box = document.createElement('div');
+                    const weekNumber = i * BOXES_PER_ROW + j; // Calculate which week this box represents
                     box.classList.add('box');
+                    box.style.backgroundColor = '#F0F0F0'; // Default light background for empty boxes
 
-                    if ((i * BOXES_PER_ROW + j) < totalWeeksLived) {
+                    // Mark the boxes for fully lived weeks with the gradient color
+                    if (weekNumber < totalWeeksLived) {
                         box.classList.add('filled');
+                        box.style.backgroundColor = rowColor;
                     }
 
-                    row.appendChild(box);
+                    // Tooltip content
+                    const age = Math.floor(weekNumber / 52); // Age in years
+                    const weeksIntoYear = weekNumber % 52;
+                    const months = Math.floor(weeksIntoYear / 4.345); // Approximate month
+                    const weeks = weeksIntoYear % 4; // Remaining weeks
+
+                    const boxDate = getDateForBox(BIRTHDATE, weekNumber);
+                    const milestoneText = milestones[age + 1] || "";
+
+                    const tooltip = document.createElement('div');
+                    tooltip.classList.add('tooltip');
+
+                    tooltip.innerHTML = `
+                        <div class="tooltip-title">Age ${age}</div>
+                        <div class="tooltip-subtitle">${age} years, ${months} months, ${weeks} weeks old</div>
+                        <div class="tooltip-subtitle">${formatDate(boxDate)}</div>
+                        <div class="tooltip-milestone">${milestoneText}</div>
+                    `;
+
+                    box.appendChild(tooltip);
+                    row.appendChild(box); // Append each box to the current row
                 }
 
-                // Add the milestone box at the end of each row
-                const milestoneBox = document.createElement('div');
-                milestoneBox.classList.add('box', 'milestone');
-                milestoneBox.textContent = milestones[i + 1] || "";
-                if ((i + 1) <= totalYearsLived) {
-                    milestoneBox.classList.add('achieved');
-                } else {
-                    milestoneBox.classList.add('pending');
-                }
-                row.appendChild(milestoneBox);
-
-                document.getElementById('lifeTable').appendChild(row);
+                document.getElementById('lifeTable').appendChild(row); // Append the row to the table
             }
         }
 
