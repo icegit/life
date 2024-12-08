@@ -5,91 +5,90 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lifetime Visualization</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            font-family: Arial, sans-serif;
-            font-size: 9px;
-            overflow: auto;
-        }
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        height: 100vh; /* Full viewport height */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: Arial, sans-serif;
+        font-size: 9px;
+        overflow: hidden; /* Prevent scrollbars */
+    }
 
-        #lifeTable {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            max-width: 67%; /* Max width 67% */
-            padding: 10px;
-            box-sizing: border-box;
-        }
+    #lifeTable {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 80vw; /* Full viewport width */
+        height: 100vh; /* Full viewport height */
+        box-sizing: border-box;
+    }
 
-        .row {
-            display: flex;
-            width: 100%; /* Ensure rows are full width */
-        }
+    .row {
+        display: flex;
+        width: 100%; /* Full width for each row */
+    }
 
-        .box {
-            width: calc(100% / 52); /* 52 weeks per row */
-            height: calc((100vh - 20px) / 80 - 2px); /* Adjust height to show 80 rows */
-            box-sizing: border-box;
-            border: 1px solid black;
-            margin: 1px;
-            text-align: center;
-            position: relative;
-            background-color: #F0F0F0; /* Default light background for empty boxes */
-        }
+    .box {
+        width: calc(100% / 52); /* Each box represents 1 week (52 weeks per row) */
+        height: calc(100vh / 80 - 2px); /* Adjust height dynamically for 80 rows */
+        box-sizing: border-box;
+        border: 1px solid black;
+        margin: 1px;
+        text-align: center;
+        background-color: #F0F0F0; /* Default light background for empty boxes */
+    }
 
-        .filled {
-            /* This will be dynamically updated with a gradient color */
-        }
+    .filled {
+        /* This will be dynamically updated with a gradient color */
+    }
 
-        /* Tooltip styling */
-        .tooltip {
-            visibility: hidden;
-            width: 280px;
-            background-color: white;
-            color: black;
-            text-align: left;
-            padding: 20px;
-            border-radius: 5px;
-            position: absolute;
-            top: -100%;
-            left: 50%;
-            transform: translateX(-50%);
-            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-            z-index: 1;
-            font-size: 12px;
-        }
+    .tooltip {
+        visibility: hidden;
+        width: 280px;
+        background-color: white;
+        color: black;
+        text-align: left;
+        padding: 20px;
+        border-radius: 5px;
+        position: absolute;
+        top: -100%;
+        left: 50%;
+        transform: translateX(-50%);
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        z-index: 1;
+        font-size: 12px;
+    }
 
-        .tooltip-title {
-            font-weight: bold;
-            font-size: 18px;
-			line-height: 2em;
-        }
+    .tooltip-title {
+        font-weight: bold;
+        font-size: 18px;
+        line-height: 2em;
+    }
 
-        .tooltip-subtitle {	
-            color: #999;
-            font-size: 14px;
-			line-height: 1.5em;
-        }
+    .tooltip-subtitle {
+        color: #999;
+        font-size: 14px;
+        line-height: 1.5em;
+    }
 
-        .tooltip-milestone {
-			padding: 2em 0 1em 0;
-            font-style: italic;
-			color: navy;
-            font-family: serif;
-            font-size: 18px;
-			line-height: 1.2em;
-        }
+    .tooltip-milestone {
+        padding: 2em 0 1em 0;
+        font-style: italic;
+        color: navy;
+        font-family: serif;
+        font-size: 18px;
+        line-height: 1.2em;
+    }
 
-        .box:hover .tooltip {
-            visibility: visible;
-        }
+    .box:hover .tooltip {
+        visibility: visible;
+    }
+</style>
 
-    </style>
 </head>
 
 <body>
@@ -233,58 +232,73 @@
             return date.toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: 'numeric' });
         }
 
-        // Function to fill the boxes with appropriate gradient colors for each row
-        function fillBoxes() {
-            const currentDate = new Date();
-            const totalWeeksLived = weeksBetweenDates(BIRTHDATE, currentDate);
+// Calculate the number of full weeks lived since birth
+function weeksBetweenDates(startDate, endDate) {
+    const oneWeek = 7 * 24 * 60 * 60 * 1000;
+    return Math.floor((endDate - startDate) / oneWeek);
+}
 
-            for (let i = 0; i < TOTAL_ROWS; i++) {
-                const row = document.createElement('div');
-                row.classList.add('row'); // Create a new row for each year
+		function fillBoxes() {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const birthYear = BIRTHDATE.getFullYear();
+    const totalFullYearsLived = currentYear - birthYear - (currentDate < new Date(currentYear, BIRTHDATE.getMonth(), BIRTHDATE.getDate()) ? 1 : 0);
 
-                // Calculate gradient factor for the row
-                const factor = i / TOTAL_ROWS;
-                const rowColor = interpolateColor(lightGreen, gray, factor); // Smooth color gradient for the row
+    const lastBirthday = new Date(currentYear, BIRTHDATE.getMonth(), BIRTHDATE.getDate());
+    if (currentDate < lastBirthday) {
+        lastBirthday.setFullYear(currentYear - 1); // Adjust for cases where birthday hasn't occurred yet this year
+    }
 
-                // Add the weekly boxes for each year
-                for (let j = 0; j < BOXES_PER_ROW; j++) {
-                    const box = document.createElement('div');
-                    const weekNumber = i * BOXES_PER_ROW + j; // Calculate which week this box represents
-                    box.classList.add('box');
-                    box.style.backgroundColor = '#F0F0F0'; // Default light background for empty boxes
+    const weeksSinceLastBirthday = Math.floor((currentDate - lastBirthday) / (7 * 24 * 60 * 60 * 1000));
 
-                    // Mark the boxes for fully lived weeks with the gradient color
-                    if (weekNumber < totalWeeksLived) {
-                        box.classList.add('filled');
-                        box.style.backgroundColor = rowColor;
-                    }
+    // Fill rows for full years lived
+    for (let i = 0; i < TOTAL_ROWS; i++) {
+        const row = document.createElement('div');
+        row.classList.add('row');
 
-                    // Tooltip content
-                    const age = Math.floor(weekNumber / 52); // Age in years
-                    const weeksIntoYear = weekNumber % 52;
-                    const months = Math.floor(weeksIntoYear / 4.345); // Approximate month
-                    const weeks = weeksIntoYear % 4; // Remaining weeks
+        // Define row color based on gradient
+        const factor = i / TOTAL_ROWS;
+        const rowColor = interpolateColor(lightGreen, gray, factor);
 
-                    const boxDate = getDateForBox(BIRTHDATE, weekNumber);
-                    const milestoneText = milestones[age + 1] || "";
+        // Add weekly boxes for the row
+        for (let j = 0; j < BOXES_PER_ROW; j++) {
+            const box = document.createElement('div');
+            const weekNumber = i * BOXES_PER_ROW + j;
+            box.classList.add('box');
+            box.style.backgroundColor = '#F0F0F0'; // Default color
 
-                    const tooltip = document.createElement('div');
-                    tooltip.classList.add('tooltip');
-
-                    tooltip.innerHTML = `
-                        <div class="tooltip-title">Age ${age}</div>
-                        <div class="tooltip-subtitle">${age} years, ${months} months, ${weeks} weeks old</div>
-                        <div class="tooltip-subtitle">${formatDate(boxDate)}</div>
-                        <div class="tooltip-milestone">${milestoneText}</div>
-                    `;
-
-                    box.appendChild(tooltip);
-                    row.appendChild(box); // Append each box to the current row
-                }
-
-                document.getElementById('lifeTable').appendChild(row); // Append the row to the table
+            // Fill boxes for full years lived
+            if (i < totalFullYearsLived || (i === totalFullYearsLived && j < weeksSinceLastBirthday)) {
+                box.classList.add('filled');
+                box.style.backgroundColor = rowColor;
             }
+
+            // Tooltip content
+            const age = Math.floor(weekNumber / 52); // Age in years
+            const weeksIntoYear = weekNumber % 52;
+            const months = Math.floor(weeksIntoYear / 4.345); // Approximate month
+            const weeks = weeksIntoYear % 4; // Remaining weeks
+
+            const boxDate = getDateForBox(BIRTHDATE, weekNumber);
+            const milestoneText = milestones[age + 1] || "";
+
+            const tooltip = document.createElement('div');
+            tooltip.classList.add('tooltip');
+
+            tooltip.innerHTML = `
+                <div class="tooltip-title">Age ${age}</div>
+                <div class="tooltip-subtitle">${age} years, ${months} months, ${weeks} weeks old</div>
+                <div class="tooltip-subtitle">${formatDate(boxDate)}</div>
+                <div class="tooltip-milestone">${milestoneText}</div>
+            `;
+
+            box.appendChild(tooltip);
+            row.appendChild(box);
         }
+
+        document.getElementById('lifeTable').appendChild(row);
+    }
+}
 
         fillBoxes();
 
